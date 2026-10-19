@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Mountain Builder - Primary School Narrative Planner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Comic Neue & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4;
+        }
+        .font-heading {
+            font-family: 'Comic Neue', cursive;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .chat-bubble-teacher {
+            background-color: #ffffff;
+            border: 2px solid #3b82f6;
+            border-radius: 18px 18px 18px 4px;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+        }
+        .chat-bubble-student {
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .story-stage-card {
+            transition: all 0.3s ease;
+        }
+        .story-stage-card.active {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        /* Custom Roadmap styling */
+        .roadmap-node {
+            transition: all 0.3s ease;
+        }
+        .roadmap-node.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+        }
+        .roadmap-node.completed {
+            background-color: #10b981;
+            color: white;
+            border-color: #059669;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-slate-50 text-slate-800">
+
+    <!-- TOP HEADER -->
+    <header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl shadow">
+                <i data-lucide="book-open"></i>
+            </div>
+            <div>
+                <h1 class="font-heading font-bold text-xl text-slate-800 tracking-wide flex items-center gap-2">
+                    Story Mountain Builder
+                    <span class="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-sans font-semibold border border-amber-200">P4 & P5 English</span>
+                </h1>
+                <p class="text-xs text-slate-500">Plan & Organise Your Composition Ideas step-by-step!</p>
+            </div>
+        </div>
+
+        <!-- Controls / Topic Info -->
+        <div class="flex items-center gap-2">
+            <div id="topicBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg">
+                <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+                <span id="currentTopicText">Topic: Not selected</span>
+            </div>
+
+            <button id="resetBtn" title="Start New Story Plan" class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium border border-slate-200">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Restart</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTENT -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- LEFT PANEL: TEACHER CHAT (60% width on desktop) -->
+        <main class="w-full md:w-7/12 flex flex-col h-full bg-slate-100/70 border-r border-slate-200">
+
+            <!-- Progress Bar Bar -->
+            <div class="bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between gap-2 shadow-xs shrink-0">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                    <span class="text-slate-400">Stage:</span>
+                    <span id="currentStageLabel" class="text-blue-600">Selecting Topic</span>
+                </div>
+                <div class="flex-1 max-w-xs mx-2 bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                    <div id="progressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-500" style="width: 5%"></div>
+                </div>
+                <span id="progressPercent" class="text-xs font-bold text-slate-500">5%</span>
+            </div>
+
+            <!-- Chat Messages Container -->
+            <div id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Chat messages rendered dynamically -->
+            </div>
+
+            <!-- Quick Action Assistant Toolbar -->
+            <div class="bg-white border-t border-slate-200 px-4 py-2 flex items-center gap-2 overflow-x-auto shrink-0">
+                <span class="text-xs font-semibold text-slate-400 whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i> Help:
+                </span>
+                <button id="btnSuggestTopics" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs rounded-full font-medium transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="lightbulb" class="w-3 h-3"></i> Topic Ideas
+                </button>
+                <button id="btnNeedIdea" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs rounded-full font-medium transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="help-circle" class="w-3 h-3"></i> Need an Idea!
+                </button>
+                <button id="btnSentenceStarter" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs rounded-full font-medium transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="pencil" class="w-3 h-3"></i> Sentence Starter
+                </button>
+                <button id="btnVocabBooster" class="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs rounded-full font-medium transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="book-marked" class="w-3 h-3"></i> Vocab Booster
+                </button>
+                <button id="btnWritingTips" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs rounded-full font-medium transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i data-lucide="feather" class="w-3 h-3"></i> Writing Strategies
+                </button>
+            </div>
+
+            <!-- CHAT INPUT FORM -->
+            <div class="p-3 bg-white border-t border-slate-200 shrink-0">
+                <form id="chatForm" class="flex items-center gap-2">
+                    <input id="userInput" type="text" autocomplete="off" placeholder="Type your ideas here for Teacher Sam..." class="flex-1 bg-slate-100 border border-slate-300 focus:border-blue-500 focus:bg-white text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none transition-all">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl shadow font-semibold flex items-center justify-center transition-colors">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL: OUTLINE & STORY MOUNTAIN (40% width on desktop) -->
+        <aside class="w-full md:w-5/12 flex flex-col h-full bg-white border-l border-slate-200 overflow-y-auto">
+            
+            <!-- FUN VISUAL PROGRESS ROADMAP -->
+            <div class="p-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border-b border-slate-200 shrink-0">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                        <i data-lucide="compass" class="w-4 h-4 text-emerald-600"></i> Story Mountain Journey
+                    </span>
+                    <span id="roadmapEncouragement" class="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                        🚀 Start climbing!
+                    </span>
+                </div>
+
+                <!-- Visual Mountain Graph / Nodes -->
+                <div class="relative py-3 px-2 flex items-center justify-between">
+                    <!-- Connecting SVG Path / Line -->
+                    <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-200 -z-0">
+                        <div id="roadmapProgressLine" class="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-blue-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Stage Nodes (1 to 5) -->
+                    <!-- Node 1: Intro -->
+                    <div class="relative z-10 flex flex-col items-center group">
+                        <div id="roadmapNode1" class="roadmap-node w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center shadow-xs">
+                            1
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-600 mt-1">Intro</span>
+                    </div>
+
+                    <!-- Node 2: Rising -->
+                    <div class="relative z-10 flex flex-col items-center group">
+                        <div id="roadmapNode2" class="roadmap-node w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center shadow-xs">
+                            2
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-600 mt-1">Rising</span>
+                    </div>
+
+                    <!-- Node 3: Climax (Peak) -->
+                    <div class="relative z-10 flex flex-col items-center group -mt-2">
+                        <div id="roadmapNode3" class="roadmap-node w-8 h-8 rounded-full bg-white border-2 border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center shadow-xs">
+                            🏔️
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-700 mt-0.5">Climax</span>
+                    </div>
+
+                    <!-- Node 4: Falling -->
+                    <div class="relative z-10 flex flex-col items-center group">
+                        <div id="roadmapNode4" class="roadmap-node w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center shadow-xs">
+                            4
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-600 mt-1">Falling</span>
+                    </div>
+
+                    <!-- Node 5: Resolution -->
+                    <div class="relative z-10 flex flex-col items-center group">
+                        <div id="roadmapNode5" class="roadmap-node w-7 h-7 rounded-full bg-white border-2 border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center shadow-xs">
+                            5
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-600 mt-1">Ending</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Outline Header -->
+            <div class="p-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+                <div>
+                    <h2 class="font-heading font-bold text-base text-slate-800 flex items-center gap-1.5">
+                        <i data-lucide="mountain" class="w-5 h-5 text-emerald-600"></i> Story Mountain Outline
+                    </h2>
+                    <p class="text-[11px] text-slate-500">Live summary of your composition plan</p>
+                </div>
+                <button id="exportBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg shadow flex items-center gap-1 transition-colors">
+                    <i data-lucide="file-down" class="w-3.5 h-3.5"></i> Export
+                </button>
+            </div>
+
+            <!-- Interactive Plot Diagram / Outline View -->
+            <div class="flex-1 p-4 space-y-3 bg-slate-50/50">
+
+                <!-- 1. Introduction Stage -->
+                <div id="stageCard1" class="story-stage-card bg-white border-2 border-slate-200 rounded-xl p-3.5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <span>1. Introduction</span>
+                        </span>
+                        <i id="checkIcon1" data-lucide="circle-dashed" class="w-4 h-4 text-slate-300"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2 italic">Who are the main characters? Where and when does the story take place?</p>
+                    <div id="stageContent1" class="text-xs text-slate-700 space-y-1 pl-2 border-l-2 border-emerald-300 min-h-[2.5rem]">
+                        <span class="text-slate-400 italic">Waiting for ideas...</span>
+                    </div>
+                </div>
+
+                <!-- 2. Rising Action Stage -->
+                <div id="stageCard2" class="story-stage-card bg-white border-2 border-slate-200 rounded-xl p-3.5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                            <span>2. Rising Action</span>
+                        </span>
+                        <i id="checkIcon2" data-lucide="circle-dashed" class="w-4 h-4 text-slate-300"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2 italic">What problem happens? How do events make the situation more exciting or tense?</p>
+                    <div id="stageContent2" class="text-xs text-slate-700 space-y-1 pl-2 border-l-2 border-amber-300 min-h-[2.5rem]">
+                        <span class="text-slate-400 italic">Waiting for ideas...</span>
+                    </div>
+                </div>
+
+                <!-- 3. Climax Stage -->
+                <div id="stageCard3" class="story-stage-card bg-white border-2 border-slate-200 rounded-xl p-3.5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1">
+                            <span>3. Climax (Peak)</span>
+                        </span>
+                        <i id="checkIcon3" data-lucide="circle-dashed" class="w-4 h-4 text-slate-300"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2 italic">The most intense/tense moment! What critical decision or big action happens?</p>
+                    <div id="stageContent3" class="text-xs text-slate-700 space-y-1 pl-2 border-l-2 border-rose-300 min-h-[2.5rem]">
+                        <span class="text-slate-400 italic">Waiting for ideas...</span>
+                    </div>
+                </div>
+
+                <!-- 4. Falling Action Stage -->
+                <div id="stageCard4" class="story-stage-card bg-white border-2 border-slate-200 rounded-xl p-3.5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                            <span>4. Falling Action</span>
+                        </span>
+                        <i id="checkIcon4" data-lucide="circle-dashed" class="w-4 h-4 text-slate-300"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2 italic">What immediate actions happen after the climax? How does the situation start calming down?</p>
+                    <div id="stageContent4" class="text-xs text-slate-700 space-y-1 pl-2 border-l-2 border-purple-300 min-h-[2.5rem]">
+                        <span class="text-slate-400 italic">Waiting for ideas...</span>
+                    </div>
+                </div>
+
+                <!-- 5. Resolution Stage -->
+                <div id="stageCard5" class="story-stage-card bg-white border-2 border-slate-200 rounded-xl p-3.5 relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
+                            <span>5. Resolution</span>
+                        </span>
+                        <i id="checkIcon5" data-lucide="circle-dashed" class="w-4 h-4 text-slate-300"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-2 italic">How is the problem fully resolved? How does the character feel or what lesson did they learn?</p>
+                    <div id="stageContent5" class="text-xs text-slate-700 space-y-1 pl-2 border-l-2 border-blue-300 min-h-[2.5rem]">
+                        <span class="text-slate-400 italic">Waiting for ideas...</span>
+                    </div>
+                </div>
+
+                <!-- Self-Check Checklist Panel (Hidden until final stage) -->
+                <div id="checklistPanel" class="hidden bg-indigo-50/80 border border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
+                    <h3 class="font-heading font-bold text-sm text-indigo-900 mb-1 flex items-center gap-1.5">
+                        <i data-lucide="check-square" class="w-4 h-4 text-indigo-600"></i> Interactive 5-Point Self-Checklist
+                    </h3>
+                    <p class="text-[11px] text-indigo-700 mb-3">Tick each box when ready! Teacher Sam will check your outline and give you feedback.</p>
+                    
+                    <div class="space-y-3 text-xs text-indigo-950">
+                        <!-- Checklist Item 1 -->
+                        <div class="bg-white p-2.5 rounded-lg border border-indigo-100 shadow-2xs">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium">
+                                <input type="checkbox" id="checkItem1" onchange="evaluateChecklistItem(1)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>1. Does my story have a clear problem?</span>
+                            </label>
+                            <div id="feedbackItem1" class="hidden mt-2 p-2 rounded bg-indigo-50 text-indigo-900 border-l-2 border-indigo-500 text-[11px] leading-relaxed"></div>
+                        </div>
+
+                        <!-- Checklist Item 2 -->
+                        <div class="bg-white p-2.5 rounded-lg border border-indigo-100 shadow-2xs">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium">
+                                <input type="checkbox" id="checkItem2" onchange="evaluateChecklistItem(2)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>2. Does the problem develop before the climax?</span>
+                            </label>
+                            <div id="feedbackItem2" class="hidden mt-2 p-2 rounded bg-indigo-50 text-indigo-900 border-l-2 border-indigo-500 text-[11px] leading-relaxed"></div>
+                        </div>
+
+                        <!-- Checklist Item 3 -->
+                        <div class="bg-white p-2.5 rounded-lg border border-indigo-100 shadow-2xs">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium">
+                                <input type="checkbox" id="checkItem3" onchange="evaluateChecklistItem(3)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>3. Is the climax the most important or tense moment?</span>
+                            </label>
+                            <div id="feedbackItem3" class="hidden mt-2 p-2 rounded bg-indigo-50 text-indigo-900 border-l-2 border-indigo-500 text-[11px] leading-relaxed"></div>
+                        </div>
+
+                        <!-- Checklist Item 4 -->
+                        <div class="bg-white p-2.5 rounded-lg border border-indigo-100 shadow-2xs">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium">
+                                <input type="checkbox" id="checkItem4" onchange="evaluateChecklistItem(4)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>4. Does falling action & ending resolve the problem?</span>
+                            </label>
+                            <div id="feedbackItem4" class="hidden mt-2 p-2 rounded bg-indigo-50 text-indigo-900 border-l-2 border-indigo-500 text-[11px] leading-relaxed"></div>
+                        </div>
+
+                        <!-- Checklist Item 5 -->
+                        <div class="bg-white p-2.5 rounded-lg border border-indigo-100 shadow-2xs">
+                            <label class="flex items-start gap-2 cursor-pointer font-medium">
+                                <input type="checkbox" id="checkItem5" onchange="evaluateChecklistItem(5)" class="mt-0.5 rounded text-indigo-600 focus:ring-indigo-500">
+                                <span>5. Do all 5 stages connect logically?</span>
+                            </label>
+                            <div id="feedbackItem5" class="hidden mt-2 p-2 rounded bg-indigo-50 text-indigo-900 border-l-2 border-indigo-500 text-[11px] leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+
+    <!-- EXPORT MODAL -->
+    <div id="exportModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 class="font-heading font-bold text-lg text-slate-800 flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i> Narrative Composition Plan
+                </h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div id="modalPrintArea" class="flex-1 overflow-y-auto pr-2 space-y-4 text-xs text-slate-800">
+                <div class="text-center pb-3 border-b border-slate-100">
+                    <h2 id="modalTopicTitle" class="text-base font-bold text-blue-900">Composition Title</h2>
+                    <p class="text-slate-500">Primary English Narrative Writing Plan (5-Stage Mountain)</p>
+                </div>
+
+                <div id="modalStage1">
+                    <h4 class="font-bold text-emerald-800 text-xs uppercase mb-1">1. Introduction</h4>
+                    <ul id="modalList1" class="list-disc pl-4 space-y-1"></ul>
+                </div>
+                <div id="modalStage2">
+                    <h4 class="font-bold text-amber-800 text-xs uppercase mb-1">2. Rising Action</h4>
+                    <ul id="modalList2" class="list-disc pl-4 space-y-1"></ul>
+                </div>
+                <div id="modalStage3">
+                    <h4 class="font-bold text-rose-800 text-xs uppercase mb-1">3. Climax</h4>
+                    <ul id="modalList3" class="list-disc pl-4 space-y-1"></ul>
+                </div>
+                <div id="modalStage4">
+                    <h4 class="font-bold text-purple-800 text-xs uppercase mb-1">4. Falling Action</h4>
+                    <ul id="modalList4" class="list-disc pl-4 space-y-1"></ul>
+                </div>
+                <div id="modalStage5">
+                    <h4 class="font-bold text-blue-800 text-xs uppercase mb-1">5. Resolution</h4>
+                    <ul id="modalList5" class="list-disc pl-4 space-y-1"></ul>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-4">
+                    <h4 class="font-bold text-slate-700 mb-1">Self-Check Checklist:</h4>
+                    <p class="text-slate-600">✓ Clear Problem | ✓ Rising Tension | ✓ Peak Climax | ✓ Smooth Falling Action | ✓ Meaningful Resolution</p>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+                <button id="copyPlanBtn" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                    <i data-lucide="copy" class="w-4 h-4"></i> Copy Text
+                </button>
+                <button id="printPlanBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Print / Save PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION LOGIC JS -->
+    <script>
+        // State Management
+        const state = {
+            topic: '',
+            currentStage: 0, // 0: Topic, 1: Intro, 2: Rising Action, 3: Climax, 4: Falling Action, 5: Resolution, 6: Complete
+            outline: {
+                stage1: [], // Intro
+                stage2: [], // Rising Action
+                stage3: [], // Climax
+                stage4: [], // Falling Action
+                stage5: []  // Resolution
+            },
+            messages: []
+        };
+
+        const STAGE_NAMES = [
+            "Choosing Topic",
+            "1. Introduction",
+            "2. Rising Action",
+            "3. Climax (Peak)",
+            "4. Falling Action",
+            "5. Resolution",
+            "Outline Completed!"
+        ];
+
+        const STAGE_PROGRESS = [5, 20, 40, 60, 80, 95, 100];
+
+        const ENCOURAGEMENTS = [
+            "🚀 Let's start climbing!",
+            "You're doing great! Keep going!",
+            "Awesome work! Building great tension!",
+            "🏔️ You've hit the peak of the mountain!",
+            "You're reaching the end soon! Stay focused!",
+            "🎉 Victory! Story mountain conquered!",
+            "🌟 Amazing composition plan completed!"
+        ];
+
+        const SYSTEM_TEACHER_PROMPT = `You are Teacher Sam, a warm, encouraging Primary English teacher in Singapore helping Primary 4 & 5 students (aged 10-11) plan narrative compositions.
+
+Special Rules & Persona:
+1. Speak warmly, patiently, and in age-appropriate English. Frequently use encouraging phrases such as "You're doing great!", "Let's try to develop the story further!", "You're reaching the end soon!" or "Fantastic idea!".
+2. ALWAYS ask ONLY ONE simple guiding question at a time.
+3. Guide the student step-by-step through 5 stages:
+   Stage 1: Introduction (Characters, setting, initial situation)
+   Stage 2: Rising Action (Developing a clear problem and building tension)
+   Stage 3: Climax (The peak intensity/crisis & main character's critical decision/action)
+   Stage 4: Falling Action (Immediate events following climax, clearing up chaos)
+   Stage 5: Resolution (How problem is fully solved, reflection, emotions, or moral lesson)
+
+4. Continuous Writing Coaching (Weave in naturally where relevant):
+   - Show, Don't Tell: Suggest describing physical actions and sensory cues instead of flat emotions (e.g., 'fists clenched, cheeks burning' instead of 'angry').
+   - Engage the Senses: Encourage sight, sound, smell, or touch details.
+   - Sentence Openers (WWHACS): Remind them to vary openers (Who, What, How, After, Considering, Since or action verbs/adverbs).
+   - Dialogue: Suggest adding 1-2 lines of natural dialogue with strong tags (whispered, blurted, gasped).
+   - Keep It Concise: Remind them that clear, accurate simple writing scores higher than forced complex words.
+
+5. Do NOT write the whole story for them. Guide them to think independently.
+6. Format responses with clean HTML tags (<p>, <ul>, <li>, <strong>) for nice rendering.
+7. ALWAYS end each assistant message with a JSON metadata block hidden inside an HTML comment tag like this:
+<!--OUTLINE_DATA:{"stage":1,"bullet":"Key bullet point summary of student's choice"}-->
+(Only include this comment block if the student provided a clear idea for the current stage).`;
+
+        const SUGGESTED_TOPICS = [
+            "An Act of Honesty",
+            "An Unexpected Danger",
+            "A Disappointment",
+            "A Helpful Gesture"
+        ];
+
+        // Init Lucide Icons
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            initApp();
+        });
+
+        function initApp() {
+            // Initial Teacher greeting
+            addTeacherMessage(`Hello there! 👋 I am <strong>Teacher Sam</strong>! I am super excited to help you plan an awesome composition using our <strong>5-Stage Story Mountain</strong>!<br><br>First, what is the <strong>title or topic</strong> of your composition today? <br><span class="text-slate-500 text-xs">(If you need an idea, click 'Topic Ideas' below!)</span>`);
+            
+            // Attach Event Listeners safely
+            const attachSafe = (id, event, handler) => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener(event, handler);
+            };
+
+            attachSafe('chatForm', 'submit', handleUserSubmit);
+            attachSafe('btnSuggestTopics', 'click', suggestTopics);
+            attachSafe('btnNeedIdea', 'click', provideIdeaHelp);
+            attachSafe('btnSentenceStarter', 'click', provideSentenceStarter);
+            attachSafe('btnVocabBooster', 'click', provideVocabBooster);
+            attachSafe('btnWritingTips', 'click', provideWritingStrategies);
+            attachSafe('resetBtn', 'click', resetApp);
+            attachSafe('exportBtn', 'click', openExportModal);
+            attachSafe('closeModalBtn', 'click', () => document.getElementById('exportModal')?.classList.add('hidden'));
+            attachSafe('copyPlanBtn', 'click', copyPlanToClipboard);
+            attachSafe('printPlanBtn', 'click', () => window.print());
+        }
+
+        // Continuous Writing Strategies Helper Button
+        function provideWritingStrategies() {
+            const html = `
+                <p>💡 <strong>Teacher Sam's 5 Top Writing Strategies:</strong></p>
+                <div class="mt-2 space-y-2 text-xs">
+                    <div class="bg-amber-50 p-2 rounded border border-amber-200">
+                        <strong>1. Show, Don't Tell:</strong> Instead of <em>"He was scared"</em>, write <em>"His knees trembled and beads of cold sweat formed on his forehead."</em>
+                    </div>
+                    <div class="bg-blue-50 p-2 rounded border border-blue-200">
+                        <strong>2. Engage the Senses:</strong> What can your character see, hear, or smell in this moment?
+                    </div>
+                    <div class="bg-emerald-50 p-2 rounded border border-emerald-200">
+                        <strong>3. Sentence Openers (WWHACS):</strong> Start sentences with <em>Who, What, How, After, Considering, or Since</em>.
+                    </div>
+                    <div class="bg-purple-50 p-2 rounded border border-purple-200">
+                        <strong>4. Expressive Dialogue:</strong> Use words like <em>whispered, blurted, or gasped</em> with action tags!
+                    </div>
+                    <div class="bg-rose-50 p-2 rounded border border-rose-200">
+                        <strong>5. Keep It Concise:</strong> Clear & accurate sentences always beat long, messy words!
+                    </div>
+                </div>
+            `;
+            addTeacherMessage(html);
+        }
+
+        // Vocabulary Booster Helper
+        function provideVocabBooster() {
+            const vocabBank = {
+                1: [
+                    { word: "Bustling", meaning: "Full of busy activity (e.g., bustling market)" },
+                    { word: "High spirits", meaning: "Feeling very happy and excited" },
+                    { word: "Serene", meaning: "Calm, peaceful, and untroubled" }
+                ],
+                2: [
+                    { word: "Panic seized me", meaning: "Suddenly feeling overwhelming fear" },
+                    { word: "Heart skipped a beat", meaning: "Great shock or surprise" },
+                    { word: "Cold sweat", meaning: "Sweating due to fear or anxiety" }
+                ],
+                3: [
+                    { word: "In the blink of an eye", meaning: "Happening extremely quickly" },
+                    { word: "Heart pounding like a jackhammer", meaning: "Show, don't tell for extreme fear/excitement" },
+                    { word: "Crucial decision", meaning: "A vital choice that determines the outcome" }
+                ],
+                4: [
+                    { word: "Dust settled", meaning: "The chaos or crisis comes to an end" },
+                    { word: "Breathing a sigh of relief", meaning: "Starting to relax after tension" },
+                    { word: "Rush to assist", meaning: "Quickly helping right after the peak moment" }
+                ],
+                5: [
+                    { word: "Wave of relief", meaning: "A strong feeling of comfort" },
+                    { word: "Indelible lesson", meaning: "A memorable lesson never forgotten" },
+                    { word: "Beaming with pride", meaning: "Smiling broadly due to achievement" }
+                ]
+            };
+
+            const stage = state.currentStage >= 1 && state.currentStage <= 5 ? state.currentStage : 1;
+            const items = vocabBank[stage];
+
+            let html = `<p>✨ <strong>Vocab & Strategy Booster for Stage ${stage}: ${STAGE_NAMES[stage]}</strong>:</p><ul class="list-disc pl-4 mt-2 space-y-1 text-xs">`;
+            items.forEach(v => {
+                html += `<li><strong>${v.word}</strong>: ${v.meaning}</li>`;
+            });
+            html += `</ul><p class="mt-2 text-xs text-slate-500">Try using one of these phrases or a "Show, Don't Tell" description!</p>`;
+
+            addTeacherMessage(html);
+        }
+
+        // Checklist Item Verification Logic
+        async function evaluateChecklistItem(itemNum) {
+            const checkbox = document.getElementById(`checkItem${itemNum}`);
+            const feedbackBox = document.getElementById(`feedbackItem${itemNum}`);
+
+            if (!checkbox.checked) {
+                feedbackBox.classList.add('hidden');
+                return;
+            }
+
+            feedbackBox.classList.remove('hidden');
+            feedbackBox.innerHTML = `<span class="italic text-indigo-400">Teacher Sam is reviewing your 5-stage outline...</span>`;
+
+            const criteriaPrompts = {
+                1: "Evaluate if the story outline has a clear problem.",
+                2: "Evaluate if the problem develops and escalates during Rising Action before the climax.",
+                3: "Evaluate if the Climax is indeed the peak tense/exciting moment.",
+                4: "Evaluate if Falling Action and Resolution properly solve the problem.",
+                5: "Evaluate if all 5 stages follow a smooth, logical sequence."
+            };
+
+            const prompt = `Act as Teacher Sam. Review this P4/P5 student's 5-part composition outline for the topic "${state.topic}".
+Check criteria #${itemNum}: "${criteriaPrompts[itemNum]}"
+
+Student Outline:
+- Introduction: ${state.outline.stage1.join("; ") || "None"}
+- Rising Action: ${state.outline.stage2.join("; ") || "None"}
+- Climax: ${state.outline.stage3.join("; ") || "None"}
+- Falling Action: ${state.outline.stage4.join("; ") || "None"}
+- Resolution: ${state.outline.stage5.join("; ") || "None"}
+
+Provide a short, warm, encouraging 2-sentence feedback comment praising their specific work. Keep under 35 words. Simple Primary English.`;
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const aiComment = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (aiComment) {
+                        feedbackBox.innerHTML = `<strong>👩‍🏫 Teacher Sam:</strong> ${escapeHtml(aiComment)}`;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Using offline checklist feedback", e);
+            }
+
+            // Fallback feedback
+            const fallbackFeedback = {
+                1: `You're doing great! Your main problem develops clearly in your Rising Action!`,
+                2: `Awesome work! You built up tension step-by-step before reaching the peak moment.`,
+                3: `Spot on! Your Climax (${state.outline.stage3[0] || 'peak moment'}) is full of drama and excitement!`,
+                4: `Wonderful! Your Falling Action and Resolution bring the story to a satisfying finish!`,
+                5: `High five! All 5 stages of your Story Mountain connect smoothly from start to end!`
+            };
+
+            feedbackBox.innerHTML = `<strong>👩‍🏫 Teacher Sam:</strong> ${fallbackFeedback[itemNum]}`;
+        }
+
+        // Render Teacher Message
+        function addTeacherMessage(htmlText) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = "flex items-start gap-3 my-2";
+            
+            messageDiv.innerHTML = `
+                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow">
+                    TS
+                </div>
+                <div class="chat-bubble-teacher p-3.5 max-w-[85%] text-sm text-slate-800 leading-relaxed">
+                    ${htmlText}
+                    <div class="mt-2 pt-1 flex items-center justify-end gap-1">
+                        <button onclick="speakText(this)" class="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1 font-medium px-1.5 py-0.5 rounded hover:bg-blue-50">
+                            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Read aloud
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            lucide.createIcons();
+        }
+
+        // Render Student Message
+        function addStudentMessage(text) {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = "flex items-start justify-end gap-3 my-2";
+            
+            messageDiv.innerHTML = `
+                <div class="chat-bubble-student p-3.5 max-w-[85%] text-sm leading-relaxed">
+                    <p>${escapeHtml(text)}</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow">
+                    Me
+                </div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Handle User Input Submission
+        async function handleUserSubmit(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('userInput');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            inputEl.value = '';
+            addStudentMessage(text);
+            state.messages.push({ role: 'user', content: text });
+
+            // Show Thinking Indicator
+            showTypingIndicator();
+
+            // Process message
+            await processTeacherResponse(text);
+        }
+
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chatContainer');
+            const indicatorDiv = document.createElement('div');
+            indicatorDiv.id = 'typingIndicator';
+            indicatorDiv.className = "flex items-start gap-3 my-2";
+            indicatorDiv.innerHTML = `
+                <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow">
+                    TS
+                </div>
+                <div class="chat-bubble-teacher p-3 text-sm text-slate-400 italic flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce"></span>
+                    <span class="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="inline-block w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                    <span>Teacher Sam is thinking...</span>
+                </div>
+            `;
+            chatContainer.appendChild(indicatorDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        // Gemini API Call with Retry Logic
+        async function callGeminiAPI(messagesHistory) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const formattedContents = messagesHistory.map(msg => ({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            }));
+
+            const payload = {
+                contents: formattedContents,
+                systemInstruction: {
+                    parts: [{ text: SYSTEM_TEACHER_PROMPT }]
+                }
+            };
+
+            let retries = 3;
+            let delay = 1000;
+
+            while (retries > 0) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                    }
+                } catch (e) {
+                    console.warn("API call retry...", e);
+                }
+                retries--;
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                }
+            }
+            return null;
+        }
+
+        // Process Logic & Response Generation
+        async function processTeacherResponse(userMessage) {
+            let aiText = await callGeminiAPI(state.messages);
+
+            removeTypingIndicator();
+
+            if (!aiText) {
+                // Smart Fallback offline response engine
+                aiText = generateFallbackTeacherResponse(userMessage);
+            }
+
+            // Extract metadata if available
+            parseOutlineMetadata(aiText, userMessage);
+
+            // Clean prompt comments before displaying
+            const cleanHtml = aiText.replace(/<!--OUTLINE_DATA:[\s\S]*?-->/g, '');
+
+            addTeacherMessage(cleanHtml);
+            state.messages.push({ role: 'model', content: cleanHtml });
+        }
+
+        // Parse JSON metadata generated by Gemini/Fallback to update Story Mountain
+        function parseOutlineMetadata(responseText, userMessage) {
+            // Stage 0 Transition: Setting Topic
+            if (state.currentStage === 0) {
+                state.topic = userMessage;
+                document.getElementById('currentTopicText').innerText = `Topic: ${userMessage}`;
+                document.getElementById('topicBadge').classList.remove('hidden');
+                advanceStage(1);
+            }
+
+            const match = responseText.match(/<!--OUTLINE_DATA:([\s\S]*?)-->/);
+            if (match && match[1]) {
+                try {
+                    const data = JSON.parse(match[1]);
+                    if (data.bullet && state.currentStage >= 1 && state.currentStage <= 5) {
+                        addBulletToStage(state.currentStage, data.bullet);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse outline data JSON", e);
+                }
+            } else {
+                if (state.currentStage >= 1 && state.currentStage <= 5 && userMessage.length > 5) {
+                    addBulletToStage(state.currentStage, userMessage);
+                }
+            }
+
+            checkStageAdvancement();
+        }
+
+        function addBulletToStage(stageNum, text) {
+            const stageKey = `stage${stageNum}`;
+            if (!state.outline[stageKey].includes(text)) {
+                state.outline[stageKey].push(text);
+                renderStageCards();
+            }
+        }
+
+        function checkStageAdvancement() {
+            const currentBullets = state.outline[`stage${state.currentStage}`] || [];
+            if (currentBullets.length >= 2 && state.currentStage < 5) {
+                advanceStage(state.currentStage + 1);
+            } else if (state.currentStage === 5 && currentBullets.length >= 2) {
+                advanceStage(6); // Complete!
+            }
+        }
+
+        function advanceStage(newStage) {
+            state.currentStage = newStage;
+            
+            // Update UI Labels & Progress
+            document.getElementById('currentStageLabel').innerText = STAGE_NAMES[newStage];
+            const pct = STAGE_PROGRESS[newStage];
+            document.getElementById('progressBar').style.width = `${pct}%`;
+            document.getElementById('progressPercent').innerText = `${pct}%`;
+
+            // Update Roadmap UI
+            updateRoadmapUI(newStage);
+
+            // Highlight Active Stage Card
+            for (let i = 1; i <= 5; i++) {
+                const card = document.getElementById(`stageCard${i}`);
+                if (card) {
+                    if (i === newStage) {
+                        card.classList.add('active', 'ring-2', 'ring-blue-400');
+                    } else {
+                        card.classList.remove('active', 'ring-2', 'ring-blue-400');
+                    }
+                }
+            }
+
+            if (newStage >= 5) {
+                document.getElementById('checklistPanel').classList.remove('hidden');
+            }
+        }
+
+        function updateRoadmapUI(stage) {
+            // Update Encouragement Badge
+            const enc = ENCOURAGEMENTS[stage] || ENCOURAGEMENTS[1];
+            document.getElementById('roadmapEncouragement').innerText = enc;
+
+            // Update Progress Line percentage in roadmap
+            const linePct = Math.min(100, Math.max(0, (stage - 1) * 25));
+            document.getElementById('roadmapProgressLine').style.width = `${linePct}%`;
+
+            // Update Nodes status
+            for (let i = 1; i <= 5; i++) {
+                const node = document.getElementById(`roadmapNode${i}`);
+                if (!node) continue;
+
+                node.classList.remove('active', 'completed');
+                if (i < stage) {
+                    node.classList.add('completed');
+                    node.innerHTML = `✓`;
+                } else if (i === stage) {
+                    node.classList.add('active');
+                } else {
+                    if (i === 3) node.innerHTML = `🏔️`;
+                    else node.innerHTML = `${i}`;
+                }
+            }
+        }
+
+        function renderStageCards() {
+            for (let i = 1; i <= 5; i++) {
+                const container = document.getElementById(`stageContent${i}`);
+                const icon = document.getElementById(`checkIcon${i}`);
+                const bullets = state.outline[`stage${i}`];
+
+                if (bullets && bullets.length > 0) {
+                    container.innerHTML = `<ul class="list-disc pl-3 space-y-1">${bullets.map(b => `<li class="leading-tight">${escapeHtml(b)}</li>`).join('')}</ul>`;
+                    icon.setAttribute('data-lucide', 'check-circle-2');
+                    icon.className = "w-4 h-4 text-emerald-500 font-bold";
+                } else {
+                    container.innerHTML = `<span class="text-slate-400 italic">Waiting for ideas...</span>`;
+                    icon.setAttribute('data-lucide', 'circle-dashed');
+                    icon.className = "w-4 h-4 text-slate-300";
+                }
+            }
+            lucide.createIcons();
+        }
+
+        // Offline Fallback Response Generator
+        function generateFallbackTeacherResponse(userText) {
+            const text = userText.toLowerCase();
+
+            if (state.currentStage === 0) {
+                state.topic = userText;
+                return `<p>🌟 <strong>You're doing great!</strong> "${escapeHtml(userText)}" is a fantastic composition topic!</p>
+                <p class="mt-2">Let's start climbing our mountain with <strong>Stage 1: Introduction</strong>.</p>
+                <p class="mt-2">Who is your main character, where are they, and what sensory detail can we use (e.g., sound or sight)?</p>`;
+            }
+
+            if (state.currentStage === 1) {
+                return `<p>Awesome idea! You're building a strong foundation! 👏</p>
+                <p class="mt-2">Let's try to develop the story further! What were they doing right before the trouble began?</p>
+                <!--OUTLINE_DATA:{"stage":1,"bullet":"${escapeHtml(userText)}"}-->`;
+            }
+
+            if (state.currentStage === 2) {
+                return `<p>Ooh, that creates great suspense! You're doing great! 💡</p>
+                <p class="mt-2">How did the problem escalate? Can you use a <strong>Show, Don't Tell</strong> clue to describe how the character felt? (e.g. <em>cold sweat, palms sweating</em>)</p>
+                <!--OUTLINE_DATA:{"stage":2,"bullet":"${escapeHtml(userText)}"}-->`;
+            }
+
+            if (state.currentStage === 3) {
+                return `<p>Spot on! 🏔️ You've reached the peak: <strong>Stage 3: Climax</strong>!</p>
+                <p class="mt-2">What critical decision or dramatic action happens at this intense moment? Add 1 line of dialogue with a strong speech tag!</p>
+                <!--OUTLINE_DATA:{"stage":3,"bullet":"${escapeHtml(userText)}"}-->`;
+            }
+
+            if (state.currentStage === 4) {
+                return `<p>Fantastic peak moment! You're reaching the end soon! ⚡</p>
+                <p class="mt-2">Now let's head down to <strong>Stage 4: Falling Action</strong>. What immediate steps happen right after the climax as things start calming down?</p>
+                <!--OUTLINE_DATA:{"stage":4,"bullet":"${escapeHtml(userText)}"}-->`;
+            }
+
+            if (state.currentStage === 5) {
+                return `<p>Nearly there! You're doing an amazing job! 🎉</p>
+                <p class="mt-2">Lastly, <strong>Stage 5: Resolution</strong>! How is everything wrapped up, and what memorable lesson did your character learn?</p>
+                <!--OUTLINE_DATA:{"stage":5,"bullet":"${escapeHtml(userText)}"}-->`;
+            }
+
+            return `<p>You are doing a fantastic job planning! What else would you like to add to make this story even clearer?</p>`;
+        }
+
+        // Quick Assistant Actions
+        function suggestTopics() {
+            addTeacherMessage(`<p>Here are 4 familiar Singapore Primary Composition topics you can pick from:</p>
+            <div class="mt-2 space-y-1.5">
+                ${SUGGESTED_TOPICS.map(t => `<button onclick="selectTopic('${t}')" class="block w-full text-left px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded border border-blue-200 transition-colors">📌 ${t}</button>`).join('')}
+            </div>`);
+        }
+
+        function selectTopic(topicName) {
+            document.getElementById('userInput').value = topicName;
+            document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        }
+
+        function provideIdeaHelp() {
+            if (state.currentStage === 1) {
+                addTeacherMessage(`<p>You're doing great! Need an idea for the <strong>Introduction</strong>?</p>
+                <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                    <li><strong>Idea A:</strong> A bustling afternoon at a hawker centre with mouth-watering smells of chicken rice.</li>
+                    <li><strong>Idea B:</strong> A quiet school library during recess where pages rustling filled the air.</li>
+                </ul>
+                <p class="mt-2">Which setting sounds fun to try?</p>`);
+            } else if (state.currentStage === 2) {
+                addTeacherMessage(`<p>Let's try to develop the story further! Here are <strong>Rising Action</strong> ideas:</p>
+                <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                    <li><strong>Idea A:</strong> Realizing your wallet is missing and panic sets in (knuckles turning white).</li>
+                    <li><strong>Idea B:</strong> Spotting a toddler crying alone near the crowded MRT escalator.</li>
+                </ul>`);
+            } else if (state.currentStage === 3) {
+                addTeacherMessage(`<p>🏔️ Ideas for the high-tension <strong>Climax</strong>:</p>
+                <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                    <li><strong>Idea A:</strong> Confronting the shopkeeper trembling, shouting: "I'm so sorry, it was an accident!"</li>
+                    <li><strong>Idea B:</strong> Sprinting through the crowd just before a dangerous fall!</li>
+                </ul>`);
+            } else if (state.currentStage === 4) {
+                addTeacherMessage(`<p>Ideas for <strong>Falling Action</strong> (calming the chaos):</p>
+                <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                    <li><strong>Idea A:</strong> Helping clear up the broken glass while breathing a huge sigh of relief.</li>
+                    <li><strong>Idea B:</strong> Leading the lost child safely to the passenger service counter.</li>
+                </ul>`);
+            } else if (state.currentStage === 5) {
+                addTeacherMessage(`<p>You're reaching the end soon! Ideas for <strong>Resolution</strong>:</p>
+                <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                    <li><strong>Idea A:</strong> Getting praised for honesty and learning that truthfulness brings peace of mind.</li>
+                    <li><strong>Idea B:</strong> Receiving a warm thank you letter from the parents and beaming with pride.</li>
+                </ul>`);
+            } else {
+                suggestTopics();
+            }
+        }
+
+        function provideSentenceStarter() {
+            const starters = {
+                1: "Considering it was a bright and sunny Saturday, my friend and I...",
+                2: "Suddenly, out of nowhere, panic seized me when...",
+                3: "With a pounding heart and trembling hands, I blurted out, \"...",
+                4: "As the dust settled, a huge sigh of relief washed over me...",
+                5: "Looking back, I learned an indelible lesson that..."
+            };
+            const sentence = starters[state.currentStage] || "It all started when...";
+            document.getElementById('userInput').value = sentence;
+            document.getElementById('userInput').focus();
+        }
+
+        // Text To Speech
+        function speakText(btn) {
+            const bubble = btn.closest('.chat-bubble-teacher');
+            const textToSpeak = bubble.innerText.replace('Read aloud', '').trim();
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                utterance.rate = 0.95;
+                utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert("Sorry, your browser doesn't support text-to-speech!");
+            }
+        }
+
+        // Modal Export Handlers
+        function openExportModal() {
+            document.getElementById('modalTopicTitle').innerText = state.topic || "Untitled Story Composition Plan";
+
+            for (let i = 1; i <= 5; i++) {
+                const modalList = document.getElementById(`modalList${i}`);
+                const bullets = state.outline[`stage${i}`];
+                if (bullets && bullets.length > 0) {
+                    modalList.innerHTML = bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('');
+                } else {
+                    modalList.innerHTML = `<li class="text-slate-400 italic">No notes recorded yet.</li>`;
+                }
+            }
+
+            document.getElementById('exportModal').classList.remove('hidden');
+        }
+
+        function copyPlanToClipboard() {
+            let fullText = `COMPOSITION STORY PLAN (5 STAGES): ${state.topic || 'Untitled'}\n\n`;
+            fullText += `1. INTRODUCTION:\n` + (state.outline.stage1.map(b => ` - ${b}`).join('\n') || 'None') + `\n\n`;
+            fullText += `2. RISING ACTION:\n` + (state.outline.stage2.map(b => ` - ${b}`).join('\n') || 'None') + `\n\n`;
+            fullText += `3. CLIMAX:\n` + (state.outline.stage3.map(b => ` - ${b}`).join('\n') || 'None') + `\n\n`;
+            fullText += `4. FALLING ACTION:\n` + (state.outline.stage4.map(b => ` - ${b}`).join('\n') || 'None') + `\n\n`;
+            fullText += `5. RESOLUTION:\n` + (state.outline.stage5.map(b => ` - ${b}`).join('\n') || 'None') + `\n`;
+
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = fullText;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            alert("5-Stage Story Plan copied to clipboard successfully!");
+        }
+
+        function resetApp() {
+            if (confirm("Are you sure you want to restart your story plan?")) {
+                state.topic = '';
+                state.currentStage = 0;
+                state.outline = { stage1: [], stage2: [], stage3: [], stage4: [], stage5: [] };
+                state.messages = [];
+                document.getElementById('chatContainer').innerHTML = '';
+                document.getElementById('topicBadge').classList.add('hidden');
+                document.getElementById('checklistPanel').classList.add('hidden');
+                advanceStage(0);
+                renderStageCards();
+                initApp();
+            }
+        }
+
+        // Helper Utility
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
